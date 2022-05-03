@@ -1,5 +1,5 @@
 /**
- *                          Blockchain Class
+ *  Blockchain Class
  *  The Blockchain class contain the basics functions to create your own private blockchain
  *  It uses libraries like `crypto-js` to create the hashes for each block and `bitcoinjs-message`
  *  to verify a message signature. The chain is stored in the array

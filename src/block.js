@@ -21,6 +21,10 @@ class Block {
     this.previousBlockHash = null;
   }
 
+  /**
+   * Validate if the block has been tampered with or not.  If the block has been
+   * tampared with, then the hashes will not match.
+   */
   validate() {
     let self = this;
     return new Promise((resolve, reject) => {
@@ -36,6 +40,9 @@ class Block {
     });
   }
 
+  /**
+   * Decodes the block body, unless the block is the Genesis Block.
+   */
   getBData() {
     let self = this;
 
