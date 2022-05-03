@@ -25,38 +25,37 @@ class Block {
    * Validate if the block has been tampered with or not.  If the block has been
    * tampared with, then the hashes will not match.
    */
-  validate() {
+  async validate() {
     let self = this;
-    return new Promise((resolve, reject) => {
-      try {
-        const currentBlockHash = self.hash;
-        const currentBlockHashStringified = JSON.stringify(self);
-        const newBlockHash = SHA256(currentBlockHashStringified).toString();
-        self.hash = newBlockHash;
-        currentBlockHash === newBlockHash ? resolve(true) : resolve(false);
-      } catch (err) {
-        reject(new Error(err));
-      }
-    });
+
+    try {
+      const currentBlockHash = self.hash;
+      const currentBlockHashStringified = JSON.stringify(self);
+      const newBlockHash = SHA256(currentBlockHashStringified).toString();
+      self.hash = newBlockHash;
+      return currentBlockHash === newBlockHash;
+    } catch (err) {
+      return new Error(err);
+    }
   }
 
   /**
    * Decodes the block body, unless the block is the Genesis Block.
    */
-  getBData() {
+  async getBData() {
     let self = this;
 
-    return new Promise(async (resolve, reject) => {
-      try {
-        const decodedData = JSON.parse(hex2ascii(this.body));
+    try {
+      const decodedData = JSON.parse(hex2ascii(this.body));
 
-        self.height == 0
-          ? resolve("** Genesis Block **")
-          : resolve(decodedData);
-      } catch (err) {
-        reject(new Error(err));
+      if (self.height === 0) {
+        return "** Genesis Block **";
+      } else {
+        return decodedData;
       }
-    });
+    } catch (err) {
+      return new Error(err);
+    }
   }
 }
 

@@ -42,10 +42,8 @@ class Blockchain {
   /**
    * Utility method that return a Promise that will resolve with the height of the chain
    */
-  getChainHeight() {
-    return new Promise((resolve, reject) => {
-      resolve(this.height);
-    });
+  async getChainHeight() {
+    return this.height;
   }
 
   /**
@@ -60,9 +58,20 @@ class Blockchain {
    * Note: the symbol `_` in the method name indicates in the javascript convention
    * that this method is a private method.
    */
-  _addBlock(block) {
+  async _addBlock(block) {
     let self = this;
-    return new Promise(async (resolve, reject) => {});
+
+    try {
+      block.height = self.chain.length;
+      block.time = Date.now();
+      block.hash = SHA256(JSON.stringify(block)).toString();
+
+      self.chain.push(block);
+      self.height++;
+      return block;
+    } catch (err) {
+      return new Error(err);
+    }
   }
 
   /**
@@ -73,8 +82,13 @@ class Blockchain {
    * The method return a Promise that will resolve with the message to be signed
    * @param {*} address
    */
-  requestMessageOwnershipVerification(address) {
-    return new Promise((resolve) => {});
+  async requestMessageOwnershipVerification(address) {
+    const message = `${address}:${new Date()
+      .getTime()
+      .toString()
+      .slice(0, -3)}:starRegistry`;
+
+    return message;
   }
 
   /**
@@ -94,9 +108,26 @@ class Blockchain {
    * @param {*} signature
    * @param {*} star
    */
-  submitStar(address, message, signature, star) {
+  async submitStar(address, message, signature, star) {
     let self = this;
-    return new Promise(async (resolve, reject) => {});
+
+    const passedTime = parseInt(message.split(":")[1]);
+    const currentTime = parseInt(new Date().getTime().toString().slice(0, -3));
+    const fiveMinutesInSeconds = 5 * 60;
+
+    if (currentTime - passedTime < fiveMinutesInSeconds) {
+      if (bitcoinMessage.verify(message, address, signature)) {
+        const block = new BlockClass.Block({ owner: address, star: star });
+        self._addBlock(block);
+        return block;
+      } else {
+        return new Error("Message could not be verified.");
+      }
+    } else {
+      return new Error(
+        "Time between current time and passed time needs to be less than 5 minutes."
+      );
+    }
   }
 
   /**
