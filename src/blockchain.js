@@ -70,7 +70,7 @@ class Blockchain {
       self.height++;
       return block;
     } catch (err) {
-      return new Error(err);
+      throw new Error(err);
     }
   }
 
@@ -115,30 +115,39 @@ class Blockchain {
     const currentTime = parseInt(new Date().getTime().toString().slice(0, -3));
     const fiveMinutesInSeconds = 5 * 60;
 
-    if (currentTime - passedTime < fiveMinutesInSeconds) {
-      if (bitcoinMessage.verify(message, address, signature)) {
-        const block = new BlockClass.Block({ owner: address, star: star });
-        self._addBlock(block);
-        return block;
+    try {
+      if (currentTime - passedTime < fiveMinutesInSeconds) {
+        if (bitcoinMessage.verify(message, address, signature)) {
+          const block = new BlockClass.Block({ owner: address, star: star });
+          self._addBlock(block);
+          return block;
+        } else {
+          throw new Error("Message could not be verified.");
+        }
       } else {
-        return new Error("Message could not be verified.");
+        throw new Error(
+          "Time between current time and passed time needs to be less than 5 minutes."
+        );
       }
-    } else {
-      return new Error(
-        "Time between current time and passed time needs to be less than 5 minutes."
-      );
+    } catch (err) {
+      throw new Error("There was an issue submitting your star.");
     }
   }
 
   /**
    * This method will return a Promise that will resolve with the Block
-   *  with the hash passed as a parameter.
+   * with the hash passed as a parameter.
    * Search on the chain array for the block that has the hash.
    * @param {*} hash
    */
-  getBlockByHash(hash) {
+  async getBlockByHash(hash) {
     let self = this;
-    return new Promise((resolve, reject) => {});
+
+    try {
+      return self.chain.filter((block) => block.hash === hash);
+    } catch (err) {
+      throw new Error("No block could be found with the provided hash.");
+    }
   }
 
   /**
@@ -146,16 +155,15 @@ class Blockchain {
    * with the height equal to the parameter `height`
    * @param {*} height
    */
-  getBlockByHeight(height) {
+  async getBlockByHeight(height) {
     let self = this;
-    return new Promise((resolve, reject) => {
-      let block = self.chain.filter((p) => p.height === height)[0];
-      if (block) {
-        resolve(block);
-      } else {
-        resolve(null);
-      }
-    });
+
+    try {
+      const block = self.chain.filter((p) => p.height === height)[0];
+      return block ? block : null;
+    } catch (err) {
+      throw new Error("No block could be found with the provided height.");
+    }
   }
 
   /**
@@ -164,10 +172,24 @@ class Blockchain {
    * Remember the star should be returned decoded.
    * @param {*} address
    */
-  getStarsByWalletAddress(address) {
+  async getStarsByWalletAddress(address) {
     let self = this;
     let stars = [];
-    return new Promise((resolve, reject) => {});
+
+    try {
+      self.chain.forEach(async (block) => {
+        const data = await block.getBData();
+        if (data && data.owner === address) {
+          stars.push(data);
+        }
+      });
+
+      return stars;
+    } catch (err) {
+      throw new Error(
+        "No stars could be found with the provided wallet address."
+      );
+    }
   }
 
   /**
@@ -176,10 +198,30 @@ class Blockchain {
    * 1. You should validate each block using `validateBlock`
    * 2. Each Block should check the with the previousBlockHash
    */
-  validateChain() {
+  async validateChain() {
     let self = this;
     let errorLog = [];
-    return new Promise(async (resolve, reject) => {});
+
+    try {
+      self.chain.forEach((block, index) => {
+        if (block.height > 0) {
+          const previousBlock = self.chain[index - 1];
+          if (block.previousBlockHash !== previousBlock.hash) {
+            const hashMismatchError = `Block ${index} Hash Mismatch :: PreviousBlockHash ${block.previousBlockHash}, Required PreviousBlockHash ${previousBlock.hash}`;
+            errorLog.push(hashMismatchError);
+          }
+
+          if (!block.validate()) {
+            const blockInvalidError = `Block ${index} Invalid :: Hash (${block.hash})`;
+            errorLog.push(blockInvalidError);
+          }
+        }
+      });
+
+      return errorLog;
+    } catch (err) {
+      throw new Error("Could not validate chain.");
+    }
   }
 }
 

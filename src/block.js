@@ -35,7 +35,7 @@ class Block {
       self.hash = newBlockHash;
       return currentBlockHash === newBlockHash;
     } catch (err) {
-      return new Error(err);
+      throw new Error(err);
     }
   }
 
@@ -54,7 +54,7 @@ class Block {
         return decodedData;
       }
     } catch (err) {
-      return new Error(err);
+      throw new Error(err);
     }
   }
 }
