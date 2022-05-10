@@ -29,11 +29,11 @@ class Block {
     let self = this;
 
     try {
-      const currentBlockHash = self.hash;
-      const currentBlockHashStringified = JSON.stringify(self);
-      const newBlockHash = SHA256(currentBlockHashStringified).toString();
-      self.hash = newBlockHash;
-      return currentBlockHash === newBlockHash;
+      const currentHash = self.hash;
+      self.hash = null;
+      const newHash = SHA256(JSON.stringify(self)).toString();
+      self.hash = currentHash;
+      return currentHash === newHash;
     } catch (err) {
       throw new Error(err);
     }
