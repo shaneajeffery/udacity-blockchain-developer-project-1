@@ -64,6 +64,11 @@ class Blockchain {
     try {
       block.height = self.chain.length;
       block.time = Date.now();
+
+      if (self.chain.length > 0) {
+        block.previousBlockHash = self.chain[self.chain.length - 1].hash;
+      }
+
       block.hash = SHA256(JSON.stringify(block)).toString();
 
       const errors = await self.validateChain();
@@ -215,7 +220,9 @@ class Blockchain {
             errorLog.push(hashMismatchError);
           }
 
-          if (!block.validate()) {
+          const isBlockValid = await block.validate();
+
+          if (!isBlockValid) {
             const blockInvalidError = `Block ${index} Invalid :: Hash (${block.hash})`;
             errorLog.push(blockInvalidError);
           }
